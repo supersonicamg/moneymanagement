@@ -7,9 +7,10 @@ interface Props {
   transactions: Transaction[]
   onExportCSV: () => void
   onResetData: () => void
+  onSignOut: () => void
 }
 
-export default function InsightsScreen({ transactions, onExportCSV, onResetData }: Props) {
+export default function InsightsScreen({ transactions, onExportCSV, onResetData, onSignOut }: Props) {
   const allInc = sumIncome(transactions)
   const allExp = sumExpense(transactions)
   const allNet = allInc - allExp
@@ -125,6 +126,15 @@ export default function InsightsScreen({ transactions, onExportCSV, onResetData 
           className="flex-1 border text-brand-red text-[10px] tracking-[.12em] uppercase py-3.5 border-[#e8ccc4] hover:bg-brand-red hover:text-stone hover:border-brand-red transition-all cursor-pointer"
         >
           Clear data
+        </button>
+      </div>
+
+      <div className="mt-3 md:hidden">
+        <button
+          onClick={onSignOut}
+          className="w-full text-ash text-[9px] tracking-[.14em] uppercase py-3 hover:text-char transition-colors cursor-pointer"
+        >
+          Sign out
         </button>
       </div>
     </div>

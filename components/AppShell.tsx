@@ -30,7 +30,7 @@ export default function AppShell() {
     addTransaction, deleteTransaction,
     saveBudget, deleteBudget,
     addGoal, deleteGoal, addToGoal,
-    exportCSV, resetData,
+    exportCSV, resetData, signOut,
   } = useData()
 
   const showToast = useCallback((msg: string) => {
@@ -48,7 +48,7 @@ export default function AppShell() {
 
   return (
     <div className="flex min-h-svh bg-stone">
-      <Nav active={screen} onChange={setScreen} onAddClick={() => setAddOpen(true)} />
+      <Nav active={screen} onChange={setScreen} onAddClick={() => setAddOpen(true)} onSignOut={signOut} />
 
       {/* Main content area */}
       <main className="flex-1 md:ml-56 lg:ml-64 min-h-svh">
@@ -84,6 +84,7 @@ export default function AppShell() {
               transactions={transactions}
               onExportCSV={() => { exportCSV(); showToast('Exported') }}
               onResetData={async () => { await resetData(); showToast('Data cleared') }}
+              onSignOut={signOut}
             />
           )}
         </div>

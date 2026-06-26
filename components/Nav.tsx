@@ -52,9 +52,10 @@ interface NavProps {
   active: Screen
   onChange: (s: Screen) => void
   onAddClick: () => void
+  onSignOut: () => void
 }
 
-export default function Nav({ active, onChange, onAddClick }: NavProps) {
+export default function Nav({ active, onChange, onAddClick, onSignOut }: NavProps) {
   return (
     <>
       {/* Mobile bottom nav */}
@@ -104,6 +105,13 @@ export default function Nav({ active, onChange, onAddClick }: NavProps) {
           className="w-full bg-char text-stone text-[11px] tracking-[.14em] uppercase py-3.5 cursor-pointer hover:opacity-85 active:opacity-70 transition-opacity"
         >
           + Add Entry
+        </button>
+
+        <button
+          onClick={onSignOut}
+          className="mt-2 w-full text-ash text-[9px] tracking-[.14em] uppercase py-2 cursor-pointer hover:text-char transition-colors"
+        >
+          Sign out
         </button>
       </aside>
     </>
