@@ -72,6 +72,18 @@ export function useData() {
     setTransactions(prev => prev.filter(t => t.id !== id))
   }
 
+  const updateTransaction = async (id: string, data: Partial<Omit<Transaction, 'id' | 'user_id' | 'created_at'>>) => {
+    const { data: res, error } = await supabase
+      .from('transactions')
+      .update(data)
+      .eq('id', id)
+      .eq('user_id', userId)
+      .select()
+      .single()
+    if (res) setTransactions(prev => prev.map(t => t.id === id ? res : t))
+    return { error }
+  }
+
   const saveBudget = async (category: string, monthly_limit: number) => {
     const existing = budgets.find(b => b.category === category)
     if (existing) {
@@ -158,7 +170,7 @@ export function useData() {
 
   return {
     transactions, budgets, goals, loading, userId,
-    addTransaction, deleteTransaction,
+    addTransaction, deleteTransaction, updateTransaction,
     saveBudget, deleteBudget,
     addGoal, deleteGoal, addToGoal,
     exportCSV, resetData, signOut,

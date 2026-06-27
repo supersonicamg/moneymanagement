@@ -84,4 +84,4 @@ export interface Profile {
   updated_at?: string
 }
 
-export type Screen = 'home' | 'log' | 'plan' | 'insights'
+export type Screen = 'home' | 'log' | 'plan' | 'insights' | 'profile'

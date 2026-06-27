@@ -1,10 +1,12 @@
 'use client'
 
-import type { Screen } from '@/lib/types'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useAppData } from '@/lib/DataContext'
 
-const TABS: { id: Screen; label: string; icon: React.ReactNode }[] = [
+const TABS = [
   {
-    id: 'home',
+    href: '/dashboard',
     label: 'Home',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="w-[18px] h-[18px]">
@@ -14,7 +16,7 @@ const TABS: { id: Screen; label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
-    id: 'log',
+    href: '/logs',
     label: 'Log',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="w-[18px] h-[18px]">
@@ -28,7 +30,7 @@ const TABS: { id: Screen; label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
-    id: 'plan',
+    href: '/plan',
     label: 'Plan',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="w-[18px] h-[18px]">
@@ -38,7 +40,7 @@ const TABS: { id: Screen; label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
-    id: 'insights',
+    href: '/insights',
     label: 'Insights',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="w-[18px] h-[18px]">
@@ -46,34 +48,48 @@ const TABS: { id: Screen; label: string; icon: React.ReactNode }[] = [
       </svg>
     ),
   },
+  {
+    href: '/profile',
+    label: 'Profile',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="w-[18px] h-[18px]">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" />
+      </svg>
+    ),
+  },
 ]
 
 interface NavProps {
-  active: Screen
-  onChange: (s: Screen) => void
   onAddClick: () => void
-  onSignOut: () => void
 }
 
-export default function Nav({ active, onChange, onAddClick, onSignOut }: NavProps) {
+export default function Nav({ onAddClick }: NavProps) {
+  const pathname = usePathname()
+  const { signOut } = useAppData()
+
   return (
     <>
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-stone border-t border-linen grid grid-cols-4 z-40" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => onChange(tab.id)}
-            className={`flex flex-col items-center gap-1 py-3.5 pb-3 cursor-pointer transition-colors duration-200 text-[9px] font-normal tracking-[.1em] uppercase ${
-              active === tab.id ? 'text-char' : 'text-ash'
-            }`}
-          >
-            <span className={active === tab.id ? 'text-brand-red' : 'text-ash'}>
-              {tab.icon}
-            </span>
-            {tab.label}
-          </button>
-        ))}
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-stone border-t border-linen grid grid-cols-5 z-40"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
+        {TABS.map(tab => {
+          const active = pathname === tab.href
+          return (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className={`flex flex-col items-center gap-1 py-3.5 pb-3 transition-colors duration-200 text-[9px] font-normal tracking-[.1em] uppercase ${
+                active ? 'text-char' : 'text-ash'
+              }`}
+            >
+              <span className={active ? 'text-brand-red' : 'text-ash'}>{tab.icon}</span>
+              {tab.label}
+            </Link>
+          )
+        })}
       </nav>
 
       {/* Desktop sidebar */}
@@ -84,20 +100,21 @@ export default function Nav({ active, onChange, onAddClick, onSignOut }: NavProp
         </div>
 
         <nav className="flex flex-col gap-1 flex-1">
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => onChange(tab.id)}
-              className={`flex items-center gap-3 px-3 py-2.5 text-left text-[11px] tracking-[.1em] uppercase cursor-pointer transition-colors duration-150 w-full ${
-                active === tab.id
-                  ? 'text-char bg-linen'
-                  : 'text-ash hover:text-char hover:bg-linen/50'
-              }`}
-            >
-              <span className={active === tab.id ? 'text-brand-red' : ''}>{tab.icon}</span>
-              {tab.label}
-            </button>
-          ))}
+          {TABS.map(tab => {
+            const active = pathname === tab.href
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                className={`flex items-center gap-3 px-3 py-2.5 text-left text-[11px] tracking-[.1em] uppercase transition-colors duration-150 w-full ${
+                  active ? 'text-char bg-linen' : 'text-ash hover:text-char hover:bg-linen/50'
+                }`}
+              >
+                <span className={active ? 'text-brand-red' : ''}>{tab.icon}</span>
+                {tab.label}
+              </Link>
+            )
+          })}
         </nav>
 
         <button
@@ -108,7 +125,7 @@ export default function Nav({ active, onChange, onAddClick, onSignOut }: NavProp
         </button>
 
         <button
-          onClick={onSignOut}
+          onClick={signOut}
           className="mt-2 w-full text-ash text-[9px] tracking-[.14em] uppercase py-2 cursor-pointer hover:text-char transition-colors"
         >
           Sign out

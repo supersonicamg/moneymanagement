@@ -10,9 +10,10 @@ const FILTER_LABELS: Record<string, string> = { all: 'All', income: 'Income', ex
 interface Props {
   transactions: Transaction[]
   onDeleteTx: (id: string) => void
+  onEditTx: (t: Transaction) => void
 }
 
-function TxRow({ t, onDelete }: { t: Transaction; onDelete: () => void }) {
+function TxRow({ t, onDelete, onEdit }: { t: Transaction; onDelete: () => void; onEdit: () => void }) {
   const isInc = t.type === 'income'
   return (
     <div className="group flex items-center py-3.5 border-b border-linen last:border-none gap-3">
@@ -21,12 +22,20 @@ function TxRow({ t, onDelete }: { t: Transaction; onDelete: () => void }) {
         <div className="text-sm text-char font-normal truncate">{t.description}</div>
         <div className="text-[10px] text-ash mt-0.5 tracking-[.04em]">{t.category} · {t.date}</div>
       </div>
-      <div className={`font-serif text-[17px] font-normal flex-shrink-0 ${isInc ? 'text-brand-green' : 'text-char'}`}>
+      <div className={`font-serif text-[17px] font-medium flex-shrink-0 ${isInc ? 'text-brand-green' : 'text-brand-red'}`}>
         {isInc ? '+' : '−'}{fmt(t.amount)}
       </div>
       <button
+        onClick={onEdit}
+        className="text-silk text-sm cursor-pointer p-2 opacity-40 md:opacity-0 md:group-hover:opacity-100 hover:text-char transition-all duration-150 flex-shrink-0"
+        aria-label="Edit"
+      >
+        ✎
+      </button>
+      <button
         onClick={onDelete}
         className="text-silk text-base cursor-pointer p-2 -mr-1 opacity-40 md:opacity-0 md:group-hover:opacity-100 hover:text-brand-red transition-all duration-150 flex-shrink-0"
+        aria-label="Delete"
       >
         ×
       </button>
@@ -34,7 +43,7 @@ function TxRow({ t, onDelete }: { t: Transaction; onDelete: () => void }) {
   )
 }
 
-export default function LogScreen({ transactions, onDeleteTx }: Props) {
+export default function LogScreen({ transactions, onDeleteTx, onEditTx }: Props) {
   const now = new Date()
   const [logYear, setLogYear] = useState(now.getFullYear())
   const [logMonth, setLogMonth] = useState(now.getMonth())
@@ -105,7 +114,7 @@ export default function LogScreen({ transactions, onDeleteTx }: Props) {
           Nothing here
         </div>
       ) : (
-        list.map(t => <TxRow key={t.id} t={t} onDelete={() => onDeleteTx(t.id)} />)
+        list.map(t => <TxRow key={t.id} t={t} onDelete={() => onDeleteTx(t.id)} onEdit={() => onEditTx(t)} />)
       )}
     </div>
   )

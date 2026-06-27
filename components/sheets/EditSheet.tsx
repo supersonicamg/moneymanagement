@@ -1,14 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Sheet from '@/components/Sheet'
-import { CATEGORIES, type TxType } from '@/lib/types'
-import { todayStr } from '@/lib/utils'
+import { CATEGORIES, type TxType, type Transaction } from '@/lib/types'
 
 interface Props {
   open: boolean
+  transaction: Transaction | null
   onClose: () => void
-  onSave: (data: {
+  onSave: (id: string, data: {
     type: TxType
     amount: number
     description: string
@@ -21,36 +21,37 @@ interface Props {
 const fieldCls = 'w-full bg-transparent border-0 border-b border-silk outline-none font-sans text-[15px] font-light text-char py-2 placeholder:text-silk focus:border-char transition-colors'
 const labelCls = 'block text-[9px] tracking-[.16em] uppercase text-ash mb-2'
 
-export default function AddSheet({ open, onClose, onSave }: Props) {
-  const [type, setType] = useState<TxType>('income')
+export default function EditSheet({ open, transaction, onClose, onSave }: Props) {
+  const [type, setType] = useState<TxType>('expense')
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('Food')
-  const [date, setDate] = useState(todayStr())
+  const [date, setDate] = useState('')
   const [note, setNote] = useState('')
 
-  const reset = () => {
-    setType('income')
-    setAmount('')
-    setDescription('')
-    setCategory('Food')
-    setDate(todayStr())
-    setNote('')
-  }
-
-  const handleClose = () => { reset(); onClose() }
+  // Sync fields whenever a different transaction is loaded
+  useEffect(() => {
+    if (transaction) {
+      setType(transaction.type === 'transfer' ? 'expense' : transaction.type)
+      setAmount(String(transaction.amount))
+      setDescription(transaction.description)
+      setCategory(transaction.category)
+      setDate(transaction.date)
+      setNote(transaction.note ?? '')
+    }
+  }, [transaction])
 
   const handleSave = () => {
     const amt = parseFloat(amount)
     if (!amt || amt <= 0) return
     if (!description.trim()) return
-    onSave({ type, amount: amt, description: description.trim(), category, date, note: note.trim() })
-    reset()
+    if (!transaction) return
+    onSave(transaction.id, { type, amount: amt, description: description.trim(), category, date, note: note.trim() })
     onClose()
   }
 
   return (
-    <Sheet open={open} onClose={handleClose} title="Add entry">
+    <Sheet open={open} onClose={onClose} title="Edit entry">
       {/* Type toggle */}
       <div className="flex border border-silk mb-7">
         <button
@@ -79,11 +80,7 @@ export default function AddSheet({ open, onClose, onSave }: Props) {
           value={amount}
           onChange={e => setAmount(e.target.value)}
           placeholder="0.00"
-          className={`w-full bg-transparent border-0 border-b outline-none font-serif text-[40px] font-light py-2 placeholder:text-silk focus:border-char transition-colors ${
-            type === 'income'
-              ? 'text-brand-green border-brand-green/40 focus:border-brand-green'
-              : 'text-brand-red border-brand-red/40 focus:border-brand-red'
-          }`}
+          className={`${fieldCls} font-serif text-[32px] font-light`}
         />
       </div>
 
@@ -124,11 +121,9 @@ export default function AddSheet({ open, onClose, onSave }: Props) {
 
       <button
         onClick={handleSave}
-        className={`w-full text-stone text-[11px] tracking-[.14em] uppercase py-4 cursor-pointer hover:opacity-85 active:opacity-70 transition-all font-medium ${
-          type === 'income' ? 'bg-brand-green' : 'bg-brand-red'
-        }`}
+        className="w-full bg-char text-stone text-[11px] tracking-[.14em] uppercase py-3.5 cursor-pointer hover:opacity-85 active:opacity-70 transition-opacity"
       >
-        {type === 'income' ? 'Save Income' : 'Save Expense'}
+        Save changes
       </button>
     </Sheet>
   )

@@ -21,6 +21,7 @@
 html {
   background-color: #F7F5F2;
   overscroll-behavior: none;
+  overflow-x: hidden;
 }
 
 body {

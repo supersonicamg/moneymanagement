@@ -1,4 +1,4 @@
-const CACHE = 'paisa-v1'
+const CACHE = 'paisa-v2'
 
 self.addEventListener('install', () => {
   self.skipWaiting()
@@ -30,12 +30,30 @@ self.addEventListener('fetch', e => {
     return
   }
 
-  // Cache-first for static assets (fonts, images, JS, CSS)
+  // Network-first for scripts and styles so code changes always reach the browser.
+  // Cache-first only for fonts and images which never change.
+  const dest = e.request.destination
+  if (dest === 'script' || dest === 'style') {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          if (res.ok) {
+            const clone = res.clone()
+            caches.open(CACHE).then(c => c.put(e.request, clone))
+          }
+          return res
+        })
+        .catch(() => caches.match(e.request).then(r => r || fetch(e.request)))
+    )
+    return
+  }
+
+  // Cache-first for fonts and images
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached
       return fetch(e.request).then(res => {
-        if (res.ok && ['font', 'image', 'script', 'style'].includes(e.request.destination)) {
+        if (res.ok && (dest === 'font' || dest === 'image')) {
           const clone = res.clone()
           caches.open(CACHE).then(c => c.put(e.request, clone))
         }

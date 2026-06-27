@@ -17,13 +17,18 @@ export const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ]
 
-export const filterByMonth = (txs: Transaction[], year: number, month: number) => {
+export const filterByMonth = (txs: Transaction[] | undefined | null, year: number, month: number): Transaction[] => {
+  const safe = Array.isArray(txs) ? txs : []
   const prefix = mkMonthKey(year, month)
-  return txs.filter(t => t.date?.startsWith(prefix))
+  return safe.filter(t => t.date?.startsWith(prefix))
 }
 
-export const sumIncome = (txs: Transaction[]): number =>
-  txs.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0)
+export const sumIncome = (txs: Transaction[] | undefined | null): number => {
+  const safe = Array.isArray(txs) ? txs : []
+  return safe.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0)
+}
 
-export const sumExpense = (txs: Transaction[]): number =>
-  txs.filter(t => t.type === 'expense').reduce((a, t) => a + t.amount, 0)
+export const sumExpense = (txs: Transaction[] | undefined | null): number => {
+  const safe = Array.isArray(txs) ? txs : []
+  return safe.filter(t => t.type === 'expense').reduce((a, t) => a + t.amount, 0)
+}
