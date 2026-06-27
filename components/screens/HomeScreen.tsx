@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useAppData } from '@/lib/DataContext'
 import { fmt, filterByMonth, sumIncome, sumExpense, MONTH_NAMES } from '@/lib/utils'
 
@@ -16,7 +17,7 @@ function SavingsRate({ income, expense }: { income: number; expense: number }) {
 }
 
 function BudgetBar({ b, monthTxs }: {
-  b: { id: string; category: string; monthly_limit: number };
+  b: { id: string; category: string; monthly_limit: number }
   monthTxs: ReturnType<typeof filterByMonth>
 }) {
   const spent = monthTxs
@@ -25,10 +26,7 @@ function BudgetBar({ b, monthTxs }: {
   const pct = Math.min(100, Math.round((spent / b.monthly_limit) * 100))
   const over = spent > b.monthly_limit
   const warn = !over && pct >= 75
-
-  let barColor = '#3A6B4A'
-  if (over) barColor = '#C1440E'
-  else if (warn) barColor = '#C17A0E'
+  const barColor = over ? '#C1440E' : warn ? '#C17A0E' : '#3A6B4A'
 
   return (
     <div className="py-4 border-b border-linen last:border-none">
@@ -42,9 +40,9 @@ function BudgetBar({ b, monthTxs }: {
           {' '}/{' '}{fmt(b.monthly_limit)}
         </span>
       </div>
-      <div className="h-[3px] bg-linen rounded-full relative">
+      <div className="h-0.75 bg-linen rounded-full relative">
         <div
-          className="absolute top-0 left-0 h-[3px] rounded-full transition-all duration-700"
+          className="absolute top-0 left-0 h-0.75 rounded-full transition-all duration-700"
           style={{ width: `${pct}%`, background: barColor }}
         />
       </div>
@@ -58,8 +56,14 @@ function BudgetBar({ b, monthTxs }: {
   )
 }
 
+const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+
+function fmtShort(d: Date) {
+  return `${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)}`
+}
+
 export default function HomeScreen() {
-  const { transactions: rawTransactions, budgets, deleteTransaction, showToast } = useAppData()
+  const { transactions: rawTransactions, budgets } = useAppData()
   const transactions = Array.isArray(rawTransactions) ? rawTransactions : []
 
   const now = new Date()
@@ -70,23 +74,58 @@ export default function HomeScreen() {
   const expense = sumExpense(monthTxs)
   const balance = income - expense
 
-  // Week bars
+  const todayStr = now.toISOString().split('T')[0]
+
+  const [weekOffset, setWeekOffset] = useState(0)
+  const [selectedDay, setSelectedDay] = useState<string>(todayStr)
+
+  // Monday of the current real week
   const dow = now.getDay()
-  const monday = new Date(now)
-  monday.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1))
+  const currentMonday = new Date(now)
+  currentMonday.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1))
+  currentMonday.setHours(0, 0, 0, 0)
+
+  // Monday of the viewed week
+  const weekMonday = new Date(currentMonday)
+  weekMonday.setDate(currentMonday.getDate() + weekOffset * 7)
+
   const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday)
-    d.setDate(monday.getDate() + i)
+    const d = new Date(weekMonday)
+    d.setDate(weekMonday.getDate() + i)
     return d.toISOString().split('T')[0]
   })
+
   const weekVals = weekDays.map(d =>
-    transactions.filter(t => t.type === 'expense' && t.date === d).reduce((a, t) => a + t.amount, 0)
+    transactions
+      .filter(t => t.type === 'expense' && t.date === d)
+      .reduce((a, t) => a + t.amount, 0)
   )
   const maxVal = Math.max(...weekVals, 1)
-  const todayStr = now.toISOString().split('T')[0]
-  const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
-  const recent = transactions.slice(0, 5)
+  const weekEnd = new Date(weekMonday)
+  weekEnd.setDate(weekMonday.getDate() + 6)
+  const weekLabel =
+    weekOffset === 0 ? 'This week' :
+    weekOffset === -1 ? 'Last week' :
+    `${fmtShort(weekMonday)} – ${fmtShort(weekEnd)}`
+
+  // Day detail
+  const dayTxs = transactions.filter(t => t.date === selectedDay)
+  const dayExpense = dayTxs.filter(t => t.type === 'expense').reduce((a, t) => a + t.amount, 0)
+  const dayIncome = dayTxs.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0)
+
+  const selDateObj = new Date(selectedDay + 'T00:00:00')
+  const diffDays = Math.round(
+    (new Date(todayStr + 'T00:00:00').getTime() - selDateObj.getTime()) / 86400000
+  )
+  const dayLabel =
+    diffDays === 0 ? 'Today' :
+    diffDays === 1 ? 'Yesterday' :
+    `${DAY_LABELS[selDateObj.getDay() === 0 ? 6 : selDateObj.getDay() - 1]}, ${fmtShort(selDateObj)}`
+
+  const selectDay = (d: string) => {
+    if (d <= todayStr) setSelectedDay(d)
+  }
 
   return (
     <div>
@@ -117,46 +156,111 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* This week */}
-      <div className="pt-7 pb-7 border-b border-linen">
-        <div className="text-[9px] tracking-[.16em] uppercase text-ash mb-4">This week</div>
+      {/* Week chart */}
+      <div className="pt-6 pb-6 border-b border-linen">
+        {/* Week navigation */}
+        <div className="flex items-center justify-between mb-5">
+          <button
+            onClick={() => setWeekOffset(o => o - 1)}
+            className="text-ash hover:text-char cursor-pointer transition-colors p-1 -ml-1 text-base"
+            aria-label="Previous week"
+          >
+            ←
+          </button>
+          <div className="text-[9px] tracking-[.16em] uppercase text-ash">{weekLabel}</div>
+          <button
+            onClick={() => weekOffset < 0 && setWeekOffset(o => o + 1)}
+            aria-label="Next week"
+            className={`p-1 -mr-1 text-base transition-colors ${
+              weekOffset >= 0 ? 'text-silk cursor-default' : 'text-ash hover:text-char cursor-pointer'
+            }`}
+          >
+            →
+          </button>
+        </div>
+
+        {/* Bars */}
         <div className="grid grid-cols-7 gap-1.5 items-end h-14 mb-2">
           {weekDays.map((d, i) => {
-            const h = weekVals[i] === 0 ? 2 : Math.max(4, Math.round((weekVals[i] / maxVal) * 48))
-            const isToday = d === todayStr
+            const isFuture = d > todayStr
+            const isSelected = d === selectedDay
+            const hasData = weekVals[i] > 0
+            const h = !hasData || isFuture ? 2 : Math.max(4, Math.round((weekVals[i] / maxVal) * 48))
+            const bg = isFuture ? '#F0EDE9' : isSelected ? '#1C1C1A' : hasData ? '#D6D0C8' : '#EDE9E3'
+
             return (
-              <div key={d} className="flex flex-col items-center gap-1 h-14 justify-end">
+              <button
+                key={d}
+                onClick={() => selectDay(d)}
+                disabled={isFuture}
+                title={!isFuture && hasData ? fmt(weekVals[i]) : undefined}
+                className={`flex flex-col items-center h-14 justify-end w-full ${isFuture ? 'cursor-default' : 'cursor-pointer'}`}
+              >
                 <div
-                  className="w-full rounded-sm transition-all duration-500"
-                  style={{
-                    height: h,
-                    background: isToday ? '#1C1C1A' : weekVals[i] > 0 ? '#D6D0C8' : '#EDE9E3',
-                  }}
-                  title={weekVals[i] > 0 ? fmt(weekVals[i]) : '—'}
+                  className="w-full rounded-sm transition-all duration-300"
+                  style={{ height: h, background: bg }}
                 />
-              </div>
+              </button>
             )
           })}
         </div>
+
+        {/* Day labels */}
         <div className="grid grid-cols-7 gap-1.5">
           {DAY_LABELS.map((l, i) => (
-            <div
+            <button
               key={i}
-              className={`text-center text-[8px] uppercase tracking-[.06em] ${
-                weekDays[i] === todayStr ? 'text-char font-medium' : 'text-ash'
+              onClick={() => selectDay(weekDays[i])}
+              disabled={weekDays[i] > todayStr}
+              className={`text-center text-[8px] uppercase tracking-[.06em] transition-colors ${
+                weekDays[i] === selectedDay
+                  ? 'text-char font-medium'
+                  : weekDays[i] > todayStr
+                  ? 'text-silk cursor-default'
+                  : 'text-ash cursor-pointer'
               }`}
             >
               {l}
-            </div>
+            </button>
           ))}
         </div>
-        {weekVals.some(v => v > 0) && (
-          <div className="mt-3 text-[10px] text-ash">
-            Total this week:{' '}
-            <span className="text-char font-medium">
-              {fmt(weekVals.reduce((a, v) => a + v, 0))}
-            </span>
+      </div>
+
+      {/* Day detail */}
+      <div className="pt-6 pb-6 border-b border-linen">
+        <div className="flex items-baseline justify-between mb-4">
+          <div className="text-[9px] tracking-[.16em] uppercase text-ash">{dayLabel}</div>
+          <div className="flex items-baseline gap-3">
+            {dayIncome > 0 && (
+              <span className="font-serif text-[14px] text-brand-green">+{fmt(dayIncome)}</span>
+            )}
+            {dayExpense > 0 && (
+              <span className="font-serif text-[14px] text-brand-red">−{fmt(dayExpense)}</span>
+            )}
           </div>
+        </div>
+
+        {dayTxs.length === 0 ? (
+          <div className="py-8 text-center text-ash text-[12px] tracking-[.06em]">
+            <div className="w-8 h-px bg-silk mx-auto mb-4" />
+            Nothing on this day
+          </div>
+        ) : (
+          dayTxs.map(t => {
+            const isInc = t.type === 'income'
+            return (
+              <div key={t.id} className="flex items-center py-3 border-b border-linen last:border-none gap-3">
+                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isInc ? 'bg-brand-green' : 'bg-brand-red'}`} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-char truncate">{t.description}</div>
+                  <div className="text-[10px] text-ash mt-0.5 tracking-[.04em]">{t.category}</div>
+                </div>
+                <div className={`font-serif text-[17px] shrink-0 ${isInc ? 'text-brand-green' : 'text-brand-red'}`}>
+                  {isInc ? '+' : '−'}{fmt(t.amount)}
+                </div>
+              </div>
+            )
+          })
         )}
       </div>
 
@@ -184,39 +288,6 @@ export default function HomeScreen() {
             .sort((a, b) => b.pct - a.pct)
             .slice(0, 3)
             .map(b => <BudgetBar key={b.id} b={b} monthTxs={monthTxs} />)
-        )}
-      </div>
-
-      {/* Recent transactions */}
-      <div className="pt-7">
-        <div className="text-[9px] tracking-[.16em] uppercase text-ash mb-1">Recent</div>
-        {recent.length === 0 ? (
-          <div className="py-10 text-center text-ash text-[12px] tracking-[.06em]">
-            <div className="w-8 h-px bg-silk mx-auto mb-5" />
-            No entries yet
-          </div>
-        ) : (
-          recent.map(t => {
-            const isInc = t.type === 'income'
-            return (
-              <div key={t.id} className="group flex items-center py-3.5 border-b border-linen last:border-none gap-3">
-                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isInc ? 'bg-brand-green' : 'bg-brand-red'}`} />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm text-char truncate">{t.description}</div>
-                  <div className="text-[10px] text-ash mt-0.5 tracking-[.04em]">{t.category} · {t.date}</div>
-                </div>
-                <div className={`font-serif text-[17px] flex-shrink-0 ${isInc ? 'text-brand-green' : 'text-brand-red'}`}>
-                  {isInc ? '+' : '−'}{fmt(t.amount)}
-                </div>
-                <button
-                  onClick={async () => { await deleteTransaction(t.id); showToast('Deleted') }}
-                  className="text-silk text-base cursor-pointer p-2 -mr-1 opacity-40 md:opacity-0 md:group-hover:opacity-100 hover:text-brand-red transition-all duration-150 flex-shrink-0"
-                >
-                  ×
-                </button>
-              </div>
-            )
-          })
         )}
       </div>
     </div>

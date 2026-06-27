@@ -47,6 +47,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${dmSans.variable} ${cormorant.variable} h-full`}>
+      <head>
+        {/* Capture beforeinstallprompt before React hydrates so we never miss it */}
+        <script dangerouslySetInnerHTML={{ __html: `window.__pwaPrompt=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__pwaPrompt=e;});` }} />
+      </head>
       <body className="min-h-full font-sans font-light antialiased bg-stone text-char">
         {children}
         <ServiceWorkerRegistrar />
