@@ -26,7 +26,7 @@ function TxRow({ t, onDelete }: { t: Transaction; onDelete: () => void }) {
       </div>
       <button
         onClick={onDelete}
-        className="text-silk text-sm cursor-pointer p-1 opacity-0 group-hover:opacity-100 hover:text-brand-red transition-all duration-150 flex-shrink-0"
+        className="text-silk text-base cursor-pointer p-2 -mr-1 opacity-40 md:opacity-0 md:group-hover:opacity-100 hover:text-brand-red transition-all duration-150 flex-shrink-0"
       >
         ×
       </button>

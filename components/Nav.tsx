@@ -59,7 +59,7 @@ export default function Nav({ active, onChange, onAddClick, onSignOut }: NavProp
   return (
     <>
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-stone border-t border-linen grid grid-cols-4 z-40 pb-[env(safe-area-inset-bottom,0)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-stone border-t border-linen grid grid-cols-4 z-40" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         {TABS.map(tab => (
           <button
             key={tab.id}

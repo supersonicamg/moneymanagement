@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import type { Screen } from '@/lib/types'
 import { useData } from '@/hooks/useData'
+import DevicePrompt from '@/components/DevicePrompt'
 
 import Nav from '@/components/Nav'
 import FAB from '@/components/FAB'
@@ -52,7 +53,7 @@ export default function AppShell() {
 
       {/* Main content area */}
       <main className="flex-1 md:ml-56 lg:ml-64 min-h-svh">
-        <div className="max-w-2xl mx-auto px-6 pb-28 md:pb-12 md:px-10">
+        <div className="max-w-2xl mx-auto px-5 md:px-10 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] md:pb-12">
           {screen === 'home' && (
             <HomeScreen
               transactions={transactions}
@@ -92,6 +93,9 @@ export default function AppShell() {
 
       {/* FAB (mobile only) */}
       <FAB onClick={() => setAddOpen(true)} />
+
+      {/* First-time device prompt */}
+      <DevicePrompt />
 
       {/* Sheets */}
       <AddSheet
