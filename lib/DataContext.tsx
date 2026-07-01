@@ -12,6 +12,7 @@ interface SheetState {
   goalOpen: boolean
   depositOpen: boolean
   depositTarget: { id: string; name: string }
+  balanceOpen: boolean
 }
 
 type DataHook = ReturnType<typeof useData>
@@ -30,6 +31,8 @@ interface DataContextValue extends DataHook {
   closeGoal: () => void
   openDeposit: (id: string, name: string) => void
   closeDeposit: () => void
+  openBalance: () => void
+  closeBalance: () => void
 }
 
 const DataContext = createContext<DataContextValue | null>(null)
@@ -45,6 +48,7 @@ function AppDataProvider({ children }: { children: ReactNode }) {
     goalOpen: false,
     depositOpen: false,
     depositTarget: { id: '', name: '' },
+    balanceOpen: false,
   })
 
   const showToast = useCallback((msg: string) => {
@@ -63,6 +67,8 @@ function AppDataProvider({ children }: { children: ReactNode }) {
   const openDeposit = useCallback((id: string, name: string) =>
     setSheets(s => ({ ...s, depositOpen: true, depositTarget: { id, name } })), [])
   const closeDeposit = useCallback(() => setSheets(s => ({ ...s, depositOpen: false })), [])
+  const openBalance = useCallback(() => setSheets(s => ({ ...s, balanceOpen: true })), [])
+  const closeBalance = useCallback(() => setSheets(s => ({ ...s, balanceOpen: false })), [])
 
   return (
     <DataContext.Provider value={{
@@ -77,6 +83,7 @@ function AppDataProvider({ children }: { children: ReactNode }) {
       openBudget, closeBudget,
       openGoal, closeGoal,
       openDeposit, closeDeposit,
+      openBalance, closeBalance,
     }}>
       {children}
     </DataContext.Provider>

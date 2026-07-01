@@ -10,12 +10,16 @@ import EditSheet from '@/components/sheets/EditSheet'
 import BudgetSheet from '@/components/sheets/BudgetSheet'
 import GoalSheet from '@/components/sheets/GoalSheet'
 import DepositSheet from '@/components/sheets/DepositSheet'
+import BalanceSheet from '@/components/sheets/BalanceSheet'
+import { sumIncome, sumExpense } from '@/lib/utils'
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const {
     loading,
+    transactions, profile,
     addTransaction, updateTransaction,
     saveBudget, addGoal, addToGoal,
+    updateBalance,
     toast, showToast,
     sheets,
     openAdd, closeAdd,
@@ -23,7 +27,10 @@ function AppShell({ children }: { children: React.ReactNode }) {
     openBudget, closeBudget,
     openGoal, closeGoal,
     closeDeposit,
+    closeBalance,
   } = useAppData()
+
+  const currentBalance = (profile?.starting_balance ?? 0) + sumIncome(transactions) - sumExpense(transactions)
 
   if (loading) {
     return (
@@ -86,6 +93,16 @@ function AppShell({ children }: { children: React.ReactNode }) {
         onSave={async amount => {
           await addToGoal(sheets.depositTarget.id, amount)
           showToast('Savings updated')
+        }}
+      />
+
+      <BalanceSheet
+        open={sheets.balanceOpen}
+        currentBalance={currentBalance}
+        onClose={closeBalance}
+        onSave={async balance => {
+          await updateBalance(balance)
+          showToast('Balance updated')
         }}
       />
 

@@ -80,6 +80,7 @@ export interface Profile {
   display_name?: string
   currency: string
   avatar_url?: string
+  starting_balance: number
   created_at?: string
   updated_at?: string
 }

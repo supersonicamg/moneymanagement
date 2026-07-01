@@ -9,12 +9,13 @@ drop table if exists goals cascade;
 -- ── Profiles ─────────────────────────────────────────────────
 -- Auto-created when a user signs up via auth trigger below.
 create table if not exists profiles (
-  id            uuid        primary key references auth.users(id) on delete cascade,
-  display_name  text,
-  currency      text        not null default 'INR',
-  avatar_url    text,
-  created_at    timestamptz not null default now(),
-  updated_at    timestamptz not null default now()
+  id                uuid        primary key references auth.users(id) on delete cascade,
+  display_name      text,
+  currency          text        not null default 'INR',
+  avatar_url        text,
+  starting_balance  numeric(14,2) not null default 0,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now()
 );
 
 -- ── Accounts ─────────────────────────────────────────────────

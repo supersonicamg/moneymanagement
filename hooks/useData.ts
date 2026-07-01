@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import type { Transaction, Budget, Goal } from '@/lib/types'
-import { todayStr } from '@/lib/utils'
+import type { Transaction, Budget, Goal, Profile } from '@/lib/types'
+import { todayStr, sumIncome, sumExpense } from '@/lib/utils'
 
 export function useData() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [goals, setGoals] = useState<Goal[]>([])
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const router = useRouter()
@@ -33,7 +34,7 @@ export function useData() {
     if (!userId) return
     setLoading(true)
     try {
-      const [txRes, bRes, gRes] = await Promise.all([
+      const [txRes, bRes, gRes, pRes] = await Promise.all([
         supabase.from('transactions').select('*')
           .eq('user_id', userId)
           .order('date', { ascending: false })
@@ -44,10 +45,14 @@ export function useData() {
         supabase.from('goals').select('*')
           .eq('user_id', userId)
           .order('created_at', { ascending: true }),
+        supabase.from('profiles').select('*')
+          .eq('id', userId)
+          .single(),
       ])
       if (txRes.data) setTransactions(txRes.data)
       if (bRes.data) setBudgets(bRes.data)
       if (gRes.data) setGoals(gRes.data)
+      if (pRes.data) setProfile(pRes.data)
     } catch (err) {
       console.error('Failed to fetch data:', err)
     } finally {
@@ -138,6 +143,19 @@ export function useData() {
     if (res) setGoals(prev => prev.map(g => g.id === id ? res : g))
   }
 
+  const updateBalance = async (currentBalance: number) => {
+    if (!userId) return
+    const netAllTime = sumIncome(transactions) - sumExpense(transactions)
+    const starting_balance = currentBalance - netAllTime
+    const { data: res } = await supabase
+      .from('profiles')
+      .update({ starting_balance })
+      .eq('id', userId)
+      .select()
+      .single()
+    if (res) setProfile(res)
+  }
+
   const exportCSV = () => {
     const rows = [['Date', 'Type', 'Category', 'Description', 'Amount', 'Note']]
     transactions.forEach(t =>
@@ -169,10 +187,11 @@ export function useData() {
   }
 
   return {
-    transactions, budgets, goals, loading, userId,
+    transactions, budgets, goals, profile, loading, userId,
     addTransaction, deleteTransaction, updateTransaction,
     saveBudget, deleteBudget,
     addGoal, deleteGoal, addToGoal,
+    updateBalance,
     exportCSV, resetData, signOut,
   }
 }
