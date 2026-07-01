@@ -1,5 +1,6 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { DataProvider, useAppData } from '@/lib/DataContext'
 import Nav from '@/components/Nav'
 import FAB from '@/components/FAB'
@@ -31,6 +32,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
   } = useAppData()
 
   const currentBalance = (profile?.starting_balance ?? 0) + sumIncome(transactions) - sumExpense(transactions)
+  const isDashboard = usePathname() === '/dashboard'
 
   if (loading) {
     return (
@@ -45,7 +47,11 @@ function AppShell({ children }: { children: React.ReactNode }) {
       <Nav onAddClick={openAdd} />
 
       <main className="flex-1 md:ml-56 lg:ml-64 min-h-svh min-w-0 overflow-x-hidden">
-        <div className="max-w-2xl mx-auto px-5 md:px-10 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] md:pb-12">
+        <div
+          className={`mx-auto px-5 md:px-10 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] md:pb-12 ${
+            isDashboard ? 'max-w-2xl lg:max-w-5xl xl:max-w-6xl' : 'max-w-2xl'
+          }`}
+        >
           {children}
         </div>
       </main>
